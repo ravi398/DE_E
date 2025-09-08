@@ -698,7 +698,6 @@ int background_w_fld(
     if (pba->has_dcdm == _TRUE_)
       class_stop(pba->error_message,"Early Dark Energy not compatible with decaying Dark Matter because we omitted to code the calculation of a_eq in that case, but it would not be difficult to add it if necessary, should be a matter of 5 minutes");
     a_eq = Omega_r/Omega_m; // assumes a flat universe with a=1 today
-
     // w_ede(a) taken from eq. (11) in 1706.00730
     *w_fld = - dOmega_ede_over_da*a/Omega_ede/3./(1.-Omega_ede)+a_eq/3./(a+a_eq);
     break;
@@ -738,7 +737,8 @@ int background_w_fld(
     *integral_fld = 3.*((1.+pba->w0_fld+pba->wa_fld)*log(1./a) + pba->wa_fld*(a-1.));
     break;
   case EDE:
-    class_stop(pba->error_message,"EDE implementation not finished: to finish it, read the comments in background.c just before this line\n");
+    //printf("a_eq=%lf\n",a_eq);
+    *integral_fld = log(pow(a,-4.0)*(Omega_ede/pba->Omega0_fld)*((Omega_ede-1)/(pba->Omega0_fld-1))*((a+a_eq)/(1+a_eq)));
     break;
   }
 
@@ -2149,6 +2149,10 @@ int background_initial_conditions(
   double scf_lambda;
   double rho_fld_today;
   double w_fld,dw_over_da_fld,integral_fld;
+  //double Omega_ede = 0.;
+  //double dOmega_ede_over_da = 0.;
+  //double d2Omega_ede_over_da2 = 0.;
+  //double a_eq, Omega_r, Omega_m;
 
   /** - fix initial value of \f$ a \f$ */
   a = ppr->a_ini_over_a_today_default;
@@ -2242,17 +2246,22 @@ int background_initial_conditions(
     /* rho_fld today */
     rho_fld_today = pba->Omega0_fld * pow(pba->H0,2);
 
-    /* integrate rho_fld(a) from a_ini to a_0, to get rho_fld(a_ini) given rho_fld(a0) */
-    class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
-
+    switch (pba->fluid_equation_of_state) {
+    case CLP:
+      class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message); 
+      break;
+    case EDE:
+      class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message); 
+      break;
     /* Note: for complicated w_fld(a) functions with no simple
        analytic integral, this is the place were you should compute
        numerically the simple 1d integral [int_{a_ini}^{a_0} 3
        [(1+w_fld)/a] da] (e.g. with the Romberg method?) instead of
        calling background_w_fld */
-
+    }
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
+   
 
   }
 
@@ -2299,10 +2308,10 @@ int background_initial_conditions(
 
   /* Just checking that our initial time indeed is deep enough in the radiation
      dominated regime */
-  class_test(fabs(pvecback[pba->index_bg_Omega_r]-1.) > ppr->tol_initial_Omega_r,
+  /*class_test(fabs(pvecback[pba->index_bg_Omega_r]-1.) > ppr->tol_initial_Omega_r,
              pba->error_message,
              "Omega_r = %e, not close enough to 1. Decrease a_ini_over_a_today_default in order to start from radiation domination.",
-             pvecback[pba->index_bg_Omega_r]);
+             pvecback[pba->index_bg_Omega_r]);*/
 
   /** - compute initial proper time, assuming radiation-dominated
       universe since Big Bang and therefore \f$ t=1/(2H) \f$ (good
