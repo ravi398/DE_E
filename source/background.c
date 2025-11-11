@@ -699,7 +699,7 @@ int background_w_fld(
       class_stop(pba->error_message,"Early Dark Energy not compatible with decaying Dark Matter because we omitted to code the calculation of a_eq in that case, but it would not be difficult to add it if necessary, should be a matter of 5 minutes");
     a_eq = Omega_r/Omega_m; // assumes a flat universe with a=1 today
     // w_ede(a) taken from eq. (11) in 1706.00730
-    *w_fld = - dOmega_ede_over_da*a/Omega_ede/3./(1.-Omega_ede)+a_eq/3./(a+a_eq);
+    *w_fld =  -dOmega_ede_over_da*a/Omega_ede/3./(1.-Omega_ede)+a_eq/3./(a+a_eq);
     break;
   }
 
@@ -2261,6 +2261,8 @@ int background_initial_conditions(
     }
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
+   // pvecback_integration[pba->index_bi_rho_fld]=+pba->Omega_EDE*pow(pba->H0,2);
+    //pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld)+pba->Omega_EDE*pow(pba->H0,2);
    
 
   }
