@@ -3297,6 +3297,27 @@ int input_read_parameters_species(struct file_content * pfc,
       class_read_double("w0_fld",pba->w0_fld);
       class_read_double("Omega_EDE",pba->Omega_EDE);
       class_read_double("cs2_fld",pba->cs2_fld);
+class_call(parser_read_string(pfc,"integral_type",&string1,&flag1,errmsg),
+           errmsg,
+           errmsg);
+
+/* Complete set of parameters */
+if (flag1 == _TRUE_) {
+
+  if ((strstr(string1,"analytic") != NULL) || (strstr(string1,"ana") != NULL)) {
+    pba->integral_type = ana_method;   /* FIX */
+    printf("CLASS will use analytical method for solving integral of 3(1+w)da\n");
+  }
+  else if ((strstr(string1,"numerical") != NULL) || (strstr(string1,"num") != NULL)) {
+    pba->integral_type = num_method;    /* FIX */
+    printf("CLASS will use nuerical method for solving integral of 3(1+w)da\n");
+  }
+  else {
+    class_stop(errmsg,
+      "incomprehensible input '%s' for the field 'integral_type'", string1);
+  }
+}
+
     }
   }
 
@@ -5903,6 +5924,7 @@ int input_default_params(struct background *pba,
   pba->wa_fld = 0.;
   /** 9.a.2.2) 'EDE' case */
   pba->Omega_EDE = 0.;
+  pba->integral_type= numerical;
   /** 9.b) Omega scalar field */
   /** 9.b.1) Potential parameters and initial conditions */
   pba->scf_parameters = NULL;

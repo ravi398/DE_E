@@ -737,9 +737,15 @@ int background_w_fld(
     *integral_fld = 3.*((1.+pba->w0_fld+pba->wa_fld)*log(1./a) + pba->wa_fld*(a-1.));
     break;
   case EDE:
-    //printf("a_eq=%lf\n",a_eq);
-    *integral_fld = log(pow(a,-4.0)*(Omega_ede/pba->Omega0_fld)*((Omega_ede-1)/(pba->Omega0_fld-1))*((a+a_eq)/(1+a_eq)));
-    break;
+    switch(pba->integral_type){
+     case num_method:
+        *integral_fld=0;
+     case ana_method:
+       //printf("CLASS is using analytical method for following integral $ \int_{a}^{a0} da 3(1+w_{fld})/a $ for EDE\n");
+        *integral_fld = log(pow(a,-4.0)*(Omega_ede/pba->Omega0_fld)*((Omega_ede-1)/(pba->Omega0_fld-1))*((a+a_eq)/(1+a_eq)));
+     break;
+     }
+  break;
   }
 
   /** note: of course you can generalise these formulas to anything,
@@ -2244,20 +2250,50 @@ int background_initial_conditions(
   if (pba->has_fld == _TRUE_) {
 
     /* rho_fld today */
-    rho_fld_today = pba->Omega0_fld * pow(pba->H0,2);
+    rho_fld_today = (pba->Omega0_fld) * pow(pba->H0,2);
 
     switch (pba->fluid_equation_of_state) {
     case CLP:
       class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message); 
       break;
     case EDE:
-      class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message); 
-      break;
-    /* Note: for complicated w_fld(a) functions with no simple
-       analytic integral, this is the place were you should compute
-       numerically the simple 1d integral [int_{a_ini}^{a_0} 3
-       [(1+w_fld)/a] da] (e.g. with the Romberg method?) instead of
-       calling background_w_fld */
+         switch(pba->integral_type){
+                case ana_method:
+                     class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+                     break;
+                case num_method:
+                     class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+                     double f(double x){
+                            //double a_here=exp(x);
+                            class_call(background_w_fld(pba,exp(x),&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+	                    //printf("%f %f %f\n",x,w_fld,integral_fld); 
+	                    return 3.*(1+w_fld);
+	                    }
+	             printf("%f\n",integral_fld);
+	
+	             int n,i;
+	             double ai,af,h=0.0,x=0.0,sum=0.0,integral=0.0;
+	             n = 3000;
+	             ai = log(a);
+	             printf("ai=%f\n",ai);
+	             af = 0.;
+	             h=fabs(af-ai)/n;
+	             for(i=1;i<n;i++){
+	                 x=ai+i*h;
+	                 if(i%3==0){
+	                    sum=sum+2*f(x);
+	                     }
+	                 else{
+	                     sum=sum+3*f(x);
+	                     }
+	                 }
+                       integral=(3*h/8)*(f(ai)+f(af)+sum);
+                       integral_fld=integral;
+                       //printf("second place=%f\n",integral_fld);
+                    break;
+              }
+    break;
+    
     }
     /* rho_fld at initial time */
     pvecback_integration[pba->index_bi_rho_fld] = rho_fld_today * exp(integral_fld);
