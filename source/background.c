@@ -673,6 +673,7 @@ int background_w_fld(
   double dOmega_ede_over_da = 0.;
   double d2Omega_ede_over_da2 = 0.;
   double a_eq, Omega_r, Omega_m;
+  double gamma_a_de,derive_gamma_de;
 
   /** - first, define the function w(a) */
   switch (pba->fluid_equation_of_state) {
@@ -701,6 +702,13 @@ int background_w_fld(
     // w_ede(a) taken from eq. (11) in 1706.00730
     *w_fld =  -dOmega_ede_over_da*a/Omega_ede/3./(1.-Omega_ede)+a_eq/3./(a+a_eq);
     break;
+   case FourPWexp: 
+    gamma_a_de= ((1.-exp(-(a-1.)/pba->del_de_4pw))/(1.+exp(-(a-pba->at_de_4pw)/pba->del_de_4pw)))*((1.+exp(pba->at_de_4pw/pba->del_de_4pw))/(1.-exp(1./pba->del_de_4pw)));
+    *w_fld = pba->w0_4pw + (pba->wm_4pw-pba->w0_4pw) * gamma_a_de;
+    break;
+   case FourPWnorm: 
+     *w_fld = pba->wf + (pba->wf-pba->wi)/(1+(pow(a/pba->at_de,1/pba->delta_de)));
+    break;  
   }
 
 
@@ -720,6 +728,16 @@ int background_w_fld(
       + dOmega_ede_over_da*dOmega_ede_over_da*a/3./(1.-Omega_ede)/(1.-Omega_ede)/Omega_ede
       + a_eq/3./(a+a_eq)/(a+a_eq);
     break;
+  case FourPWexp:
+          /* derive_gamma_de=(1./pba->del_de_4pw)*((1.+exp(pba->at_de_4pw/pba->del_de_4pw))/(1.-exp(1./pba->del_de_4pw)))*((exp(-(a-1)/pba->del_de_4pw)+exp(-(a-pba->at_de_4pw)/pba->del_de_4pw))/pow((1.+exp(-(a-pba->at_de_4pw)/pba->del_de_4pw)),2.));*/
+    derive_gamma_de=-(cosh((-1.0+pba->at_de_4pw)/(2*pba->del_de_4pw))*cosh((pba->at_de_4pw)/(2*pba->del_de_4pw)))/(sinh((1.0)/(2*pba->del_de_4pw))*pow(cosh((a+pba->at_de_4pw)/(2*pba->del_de_4pw)),2)*2*pba->del_de_4pw);
+    *dw_over_da_fld =  (pba->wm_4pw-pba->w0_4pw)*derive_gamma_de;
+    break;
+    
+    case FourPWnorm:
+    *dw_over_da_fld =  -((pba->wf-pba->wi)*(1/pba->delta_de)*(1/pow(pba->at_de,1/pba->delta_de)))/pow((1+(pow(a/pba->at_de,1/pba->delta_de))),2);
+    break;
+   
   }
 
   /** - finally, give the analytic solution of the following integral:
@@ -746,6 +764,12 @@ int background_w_fld(
      break;
      }
   break;
+  case FourPWexp:
+       *integral_fld=0;
+       break;
+  case FourPWnorm:
+       *integral_fld=0;
+       break;
   }
 
   /** note: of course you can generalise these formulas to anything,
@@ -2269,13 +2293,13 @@ int background_initial_conditions(
 	                    //printf("%f %f %f\n",x,w_fld,integral_fld); 
 	                    return 3.*(1+w_fld);
 	                    }
-	             printf("%f\n",integral_fld);
+	             //printf("%f\n",integral_fld);
 	
 	             int n,i;
 	             double ai,af,h=0.0,x=0.0,sum=0.0,integral=0.0;
 	             n = 3000;
 	             ai = log(a);
-	             printf("ai=%f\n",ai);
+	             //printf("ai=%f\n",ai);
 	             af = 0.;
 	             h=fabs(af-ai)/n;
 	             for(i=1;i<n;i++){
@@ -2292,7 +2316,74 @@ int background_initial_conditions(
                        //printf("second place=%f\n",integral_fld);
                     break;
               }
+        break;
+      case FourPWexp:
+              class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+              double g(double x){
+                            //double a_here=exp(x);
+                            class_call(background_w_fld(pba,exp(x),&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+	                    //printf("%f %f %f\n",x,w_fld,integral_fld); 
+	                    return 3.*(1+w_fld);
+	                    }
+	             //printf("%f\n",integral_fld);
+	             {int n,i;
+	              double ai,af,h=0.0,x=0.0,sum=0.0,integral=0.0;
+	             n = 3000;
+	             ai = log(a);
+	             //printf("ai=%f\n",ai);
+	             af = 0.;
+	             h=fabs(af-ai)/n;
+	             for(i=1;i<n;i++){
+	                 x=ai+i*h;
+	                 if(i%3==0){
+	                    sum=sum+2*g(x);
+	                     }
+	                 else{
+	                     sum=sum+3*g(x);
+	                     }
+	                 }
+                       integral=(3*h/8)*(g(ai)+g(af)+sum);
+                       integral_fld=integral;
+                       }
+                       //printf("second place=%f\n",integral_fld);
+              
+            break;
+    
+    
+    
+       case FourPWnorm:
+                 class_call(background_w_fld(pba,a,&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+                 double hf(double x){
+                            //double a_here=exp(x);
+                            class_call(background_w_fld(pba,exp(x),&w_fld,&dw_over_da_fld,&integral_fld), pba->error_message, pba->error_message);
+	                    //printf("%f %f %f\n",x,w_fld,integral_fld); 
+	                    return 3.*(1+w_fld);
+	                    }
+	             //printf("%f\n",integral_fld);
+	
+	             {int n,i;
+	             double ai,af,h=0.0,x=0.0,sum=0.0,integral=0.0;
+	             n = 3000;
+	             ai = log(a);
+	             //printf("ai=%f\n",ai);
+	             af = 0.;
+	             h=fabs(af-ai)/n;
+	             for(i=1;i<n;i++){
+	                 x=ai+i*h;
+	                 if(i%3==0){
+	                    sum=sum+2*hf(x);
+	                     }
+	                 else{
+	                     sum=sum+3*hf(x);
+	                     }
+	                 }
+                       integral=(3*h/8)*(hf(ai)+hf(af)+sum);
+                       integral_fld=integral;
+                       }
+                       //printf("second place=%f\n",integral_fld);
     break;
+    
+    
     
     }
     /* rho_fld at initial time */

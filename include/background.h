@@ -12,7 +12,7 @@
 
 /** list of possible parametrisations of the DE equation of state */
 
-enum equation_of_state {CLP,EDE};
+enum equation_of_state {CLP,EDE,FourPWexp,FourPWnorm};
 enum integral_type {ana_method,num_method};
 
 
@@ -113,6 +113,18 @@ struct background
   double cs2_fld;  /**< \f$ c^2_{s~DE} \f$: sound speed of the fluid in the frame comoving with the fluid (so, this is
                       not [delta p/delta rho] in the synchronous or newtonian gauge!) */
   double Omega_EDE;        /**< \f$ wa_{DE} \f$: Early Dark Energy density parameter */
+  
+  
+  double w0_4pw;   /**< \f$ w0_{DE} \f$: current fluid equation of state parameter in 4 parameter de eos */
+  double wm_4pw;   /**< \f$ wa_{DE} \f$: initial fluid equation of state parameter in 4 parameter de eos */
+  double del_de_4pw; /**< \f$ w0_{DE} \f$: a width of change in 4 parameter de eos */
+  double at_de_4pw;  /**< \f$ w0_{DE} \f$: transition a of change in 4 parameter de eos */
+  
+  double wi;
+  double wf;
+  double delta_de;
+  double at_de;
+
   enum integral_type integral_type;
   double * scf_parameters; /**< list of parameters describing the scalar field potential */
   short attractor_ic_scf;  /**< whether the scalar field has attractor initial conditions */

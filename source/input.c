@@ -3279,6 +3279,13 @@ int input_read_parameters_species(struct file_content * pfc,
       else if ((strstr(string1,"EDE") != NULL) || (strstr(string1,"ede") != NULL)) {
         pba->fluid_equation_of_state = EDE;
       }
+      else if ((strstr(string1,"FourPWexp") != NULL) || (strstr(string1,"4pwe") != NULL)) {
+        pba->fluid_equation_of_state = FourPWexp;
+      }
+      else if ((strstr(string1,"FourPWnorm") != NULL) || (strstr(string1,"4pwn") != NULL)) {
+        pba->fluid_equation_of_state = FourPWnorm;
+      }
+      
       else {
         class_stop(errmsg,"incomprehensible input '%s' for the field 'fluid_equation_of_state'",string1);
       }
@@ -3300,6 +3307,9 @@ int input_read_parameters_species(struct file_content * pfc,
 class_call(parser_read_string(pfc,"integral_type",&string1,&flag1,errmsg),
            errmsg,
            errmsg);
+           
+           
+           
 
 /* Complete set of parameters */
 if (flag1 == _TRUE_) {
@@ -3319,6 +3329,30 @@ if (flag1 == _TRUE_) {
 }
 
     }
+    
+    
+    if (pba->fluid_equation_of_state == FourPWexp) {
+      class_read_double("w0_4pw",pba->w0_4pw);
+      class_read_double("wm_4pw",pba->wm_4pw);
+      class_read_double("del_de_4pw",pba->del_de_4pw);
+      pba->del_de_4pw=pow(10.0,pba->del_de_4pw);
+      class_read_double("at_de_4pw",pba->at_de_4pw);
+      pba->at_de_4pw=pow(10.0,pba->at_de_4pw);
+      class_read_double("cs2_fld",pba->cs2_fld);
+    }
+    
+    
+     if (pba->fluid_equation_of_state == FourPWnorm) {
+      class_read_double("w0",pba->wi);
+      class_read_double("wf",pba->wf);
+      class_read_double("delta_de",pba->delta_de);
+      pba->delta_de=pow(10.0,pba->delta_de);
+      class_read_double("at_de",pba->at_de);
+      pba->at_de=pow(10.0,pba->at_de);
+      class_read_double("cs2_fld",pba->cs2_fld);
+    }
+    
+    
   }
 
   /** 8.b) If Omega scalar field (SCF) is different from 0 */
