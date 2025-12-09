@@ -3346,7 +3346,6 @@ if (flag1 == _TRUE_) {
       class_read_double("w0",pba->wi);
       class_read_double("wf",pba->wf);
       class_read_double("delta_de",pba->delta_de);
-      pba->delta_de=pow(10.0,pba->delta_de);
       class_read_double("at_de",pba->at_de);
       pba->at_de=pow(10.0,pba->at_de);
       class_read_double("cs2_fld",pba->cs2_fld);

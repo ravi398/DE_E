@@ -707,7 +707,8 @@ int background_w_fld(
     *w_fld = pba->w0_4pw + (pba->wm_4pw-pba->w0_4pw) * gamma_a_de;
     break;
    case FourPWnorm: 
-     *w_fld = pba->wf + (pba->wf-pba->wi)/(1+(pow(a/pba->at_de,1/pba->delta_de)));
+        *w_fld =pba->wi + (pba->wf-pba->wi)/pow((1.+pow(pba->at_de/a,3.*(pba->wf-pba->wi)/pba->delta_de)),pba->delta_de);
+     //*w_fld = pba->wf + (-pba->wf+pba->wi)/(1+(pow(a/pba->at_de,1/pba->delta_de)));
     break;  
   }
 
@@ -735,7 +736,8 @@ int background_w_fld(
     break;
     
     case FourPWnorm:
-    *dw_over_da_fld =  -((pba->wf-pba->wi)*(1/pba->delta_de)*(1/pow(pba->at_de,1/pba->delta_de)))/pow((1+(pow(a/pba->at_de,1/pba->delta_de))),2);
+    //*dw_over_da_fld =  -((pba->wf-pba->wi)*(1/pba->delta_de)*(1/pow(pba->at_de,1/pba->delta_de))*(pow(a,(1/pba->delta_de)-1)))/pow((1+(pow(a/pba->at_de,1/pba->delta_de))),2);
+      *dw_over_da_fld=(3.*(pba->wf-pba->wi)*(pba->wf-pba->wi)*pow(pba->at_de/a,3.*(pba->wf-pba->wi)/pba->delta_de)/a)/(pow(1.+pow(pba->at_de/a,3.*(pba->wf-pba->wi)),pba->delta_de+1));
     break;
    
   }
